@@ -45,6 +45,147 @@ char_t domain_name[AR_SUB_SYS_ID_LAST + 1][24] = { "msm/adsp/audio_pd", "msm/mds
 
 #define AR_OSAL_SERVREG_CLIENT_NAME "apps/ar_osal"
 
+#ifdef AR_OSAL_USE_PD_NOTIFIER
+/*------------------------------------------
+* PD_Mapper Dynamic loading
+*------------------------------------------*/
+
+#include <dlfcn.h>
+#define PD_MAPPER_LIB "libpdmapper.so"
+void *pdMapperLibHandle = NULL;
+
+/**
+* \brief
+* Dynamically load libpdmapper.so
+*
+* \return 0 on success, non-zero on failure
+*/
+
+int32_t load_pdmapper_lib()
+{
+    int32_t status = AR_EOK;
+    AR_LOG_DEBUG(AR_OSAL_SERVREG_TAG, "Enter.");
+    if(!pdMapperLibHandle) {
+        pdMapperLibHandle = dlopen(PD_MAPPER_LIB, RTLD_NOW);
+        if (pdMapperLibHandle == NULL) {
+            const char *err_str = dlerror();
+            AR_LOG_ERR(AR_OSAL_SERVREG_TAG, "DLOPEN failed for %s, %s",
+            PD_MAPPER_LIB, err_str ? err_str : "unknown");
+            status = AR_EFAILED;
+            return status;
+        }
+    }
+
+    /* Loading the diag function symbols */
+    servreg_alloc_DLHandle = dlsym(pdMapperLibHandle, "servreg_alloc_DLHandle");
+    if (!servreg_alloc_DLHandle) {
+        AR_LOG_ERR(AR_OSAL_SERVREG_TAG, "dlsym error %s for servreg_alloc_DLHandle", dlerror());
+        goto error;
+    }
+
+    servreg_free_DLHandle = dlsym(pdMapperLibHandle, "servreg_free_DLHandle");
+    if (!servreg_free_DLHandle) {
+        AR_LOG_ERR(AR_OSAL_SERVREG_TAG, "dlsym error %s for servreg_free_DLHandle", dlerror());
+        goto error;
+    }
+
+    servreg_get_entry = dlsym(pdMapperLibHandle, "servreg_get_entry");
+    if (!servreg_get_entry) {
+        AR_LOG_ERR(AR_OSAL_SERVREG_TAG, "dlsym error %s for servreg_get_entry", dlerror());
+        goto error;
+    }
+
+    servreg_get_domainlist = dlsym(pdMapperLibHandle, "servreg_get_domainlist");
+    if (!servreg_get_domainlist) {
+        AR_LOG_ERR(AR_OSAL_SERVREG_TAG, "dlsym error %s for servreg_get_domainlist", dlerror());
+        goto error;
+    }
+
+    servreg_get_numentries = dlsym(pdMapperLibHandle, "servreg_get_numentries");
+    if (!servreg_get_numentries) {
+        AR_LOG_ERR(AR_OSAL_SERVREG_TAG, "dlsym error %s for servreg_get_numentries", dlerror());
+        goto error;
+    }
+
+    return status;
+
+error:
+    status = AR_EFAILED;
+    dlclose(pdMapperLibHandle);
+    pdMapperLibHandle = NULL;
+    return status;
+}
+
+/*------------------------------------------
+* PD_Notifier Dynamic loading
+*------------------------------------------*/
+
+#define PD_NOTIFIER_LIB "libpdnotifier.so"
+void *pdNotifierLibHandle = NULL;
+
+/**
+* \brief
+* Dynamically load libpdnotifier.so
+*
+* \return 0 on success, non-zero on failure
+*/
+
+int32_t load_pdnotifier_lib()
+{
+    int32_t status = AR_EOK;
+    AR_LOG_DEBUG(AR_OSAL_SERVREG_TAG, "Enter.");
+    if(!pdNotifierLibHandle) {
+        pdNotifierLibHandle = dlopen(PD_NOTIFIER_LIB, RTLD_NOW);
+        if (pdNotifierLibHandle == NULL) {
+            const char *err_str = dlerror();
+            AR_LOG_ERR(AR_OSAL_SERVREG_TAG, "DLOPEN failed for %s, %s",
+            PD_NOTIFIER_LIB, err_str ? err_str : "unknown");
+            status = AR_EFAILED;
+            return status;
+        }
+    }
+
+    /* Loading the diag function symbols */
+    pd_notifier_alloc = dlsym(pdNotifierLibHandle, "pd_notifier_alloc");
+    if (!pd_notifier_alloc) {
+        AR_LOG_ERR(AR_OSAL_SERVREG_TAG, "dlsym error %s for pd_notifier_alloc", dlerror());
+        goto error;
+    }
+
+    pd_notifier_register = dlsym(pdNotifierLibHandle, "pd_notifier_register");
+    if (!pd_notifier_register) {
+        AR_LOG_ERR(AR_OSAL_SERVREG_TAG, "dlsym error %s for pd_notifier_register", dlerror());
+        goto error;
+    }
+
+    pd_notifier_deregister = dlsym(pdNotifierLibHandle, "pd_notifier_deregister");
+    if (!pd_notifier_deregister) {
+        AR_LOG_ERR(AR_OSAL_SERVREG_TAG, "dlsym error %s for pd_notifier_deregister", dlerror());
+        goto error;
+    }
+
+    pd_notifier_free = dlsym(pdNotifierLibHandle, "pd_notifier_free");
+    if (!pd_notifier_free) {
+        AR_LOG_ERR(AR_OSAL_SERVREG_TAG, "dlsym error %s for pd_notifier_free", dlerror());
+        goto error;
+    }
+
+    pd_notifier_restart_pd = dlsym(pdNotifierLibHandle, "pd_notifier_restart_pd");
+    if (!pd_notifier_restart_pd) {
+        AR_LOG_ERR(AR_OSAL_SERVREG_TAG, "dlsym error %s for pd_notifier_restart_pd", dlerror());
+        goto error;
+    }
+
+    return status;
+
+error:
+    status = AR_EFAILED;
+    dlclose(pdNotifierLibHandle);
+    pdNotifierLibHandle = NULL;
+    return status;
+}
+#endif /* AR_OSAL_USE_PD_NOTIFIER */
+
 int32_t g_init_done = 0;
 struct ar_osal_service_node
 {
@@ -152,6 +293,12 @@ int32_t ar_osal_servreg_init(void)
     }
     g_init_done = 1;
 #ifdef AR_OSAL_USE_PD_NOTIFIER
+    status = load_pdmapper_lib();
+    if (AR_FAILED(status)) {
+        AR_LOG_ERR(AR_OSAL_SERVREG_TAG, "Error[%d]: Failed to load pd_mapper lib", status);
+        return status;
+    }
+
     pd_mapper_handle = servreg_alloc_DLHandle();
     if (!pd_mapper_handle)
     {
@@ -231,7 +378,7 @@ int32_t ar_osal_servreg_get_domainlist(_In_ ar_osal_servreg_entry_type *service,
 #ifdef AR_OSAL_USE_PD_NOTIFIER
     if (NULL == domain_list)
     {
-        enum SR_Result_Enum rc = SR_RESULT_SUCCESS;
+        uint32_t rc = SR_RESULT_SUCCESS;
         rc = servreg_get_domainlist((char *)service->name, pd_mapper_handle);
         if (rc != SR_RESULT_SUCCESS)
         {
@@ -248,7 +395,7 @@ int32_t ar_osal_servreg_get_domainlist(_In_ ar_osal_servreg_entry_type *service,
     else if ((domain_list != NULL) && (num_domains > 0))
     {
         //copy domain details
-        enum SR_Result_Enum rc = SR_RESULT_SUCCESS;
+        uint32_t rc = SR_RESULT_SUCCESS;
         uint32_t i = 0;
         //memcpy_s(domain_list->name, sizeof(domain_list->name), domain_name, sizeof(domain_name));
         for (i = 0; i < *num_domains; i++)
@@ -345,8 +492,14 @@ ar_osal_servreg_t ar_osal_servreg_register(_In_ ar_osal_client_type  client_type
     int32_t status = AR_EOK;
     //ar_osal_servreg_t* handle = NULL;
     ar_osal_service_node* srv_reg_handle = NULL;
-    enum pd_rcode pd_rc = PD_NOTIFIER_FAIL;
+    uint32_t pd_rc = PD_NOTIFIER_FAIL;
     pd_state state = SERVREG_NOTIF_SERVICE_STATE_DOWN_V01;
+
+    status = load_pdnotifier_lib();
+    if (AR_FAILED(status)) {
+        AR_LOG_ERR(AR_OSAL_SERVREG_TAG, "Error[%d]: Failed to load pd_notifier lib", status);
+        return status;
+    }
 
     if (NULL == domain || NULL == service || NULL == cb_func)
     {
@@ -428,7 +581,7 @@ int32_t ar_osal_servreg_deregister(_In_ ar_osal_servreg_t servreg_handle)
     return 1;
 #else
     int32_t status = AR_EOK;
-    enum pd_rcode pd_rc = PD_NOTIFIER_FAIL;
+    uint32_t pd_rc = PD_NOTIFIER_FAIL;
     ar_osal_service_node* srv_reg_handle = (ar_osal_service_node*)servreg_handle;
     if (NULL == servreg_handle)
     {
@@ -552,7 +705,7 @@ int32_t ar_osal_servreg_restart_service(ar_osal_servreg_t servreg_handle)
 #else
     int32_t rc = AR_EOK;
     int32_t ssr_rc;
-    enum pd_rcode pd_rc;
+    uint32_t pd_rc;
     ar_osal_service_node* serv_reg_handle = (ar_osal_service_node*)servreg_handle;
 #ifdef AR_OSAL_USE_CUTILS
     char value[256] = {0};
