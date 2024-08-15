@@ -1,4 +1,20 @@
 LOCAL_PATH := $(call my-dir)
+
+include $(CLEAR_VARS)
+
+LOCAL_MODULE := libacdb_headers
+LOCAL_PROPRIETARY_MODULE := true
+
+LOCAL_EXPORT_C_INCLUDE_DIRS := \
+    $(LOCAL_PATH)/api \
+    $(LOCAL_PATH)/inc \
+    $(LOCAL_PATH)/ats/api \
+    $(LOCAL_PATH)/ats/inc \
+    $(LOCAL_PATH)/ats/adie/common/api \
+    $(LOCAL_PATH)/ats/mcs/common/api
+
+include $(BUILD_HEADER_LIBRARY)
+
 include $(CLEAR_VARS)
 
 #----------------------------------------------------------------------------
