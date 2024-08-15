@@ -95,6 +95,7 @@ LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/ats/fts/common/inc/ \
     $(LOCAL_PATH)/ats/transports/diag/linux/actp/inc/ \
     $(LOCAL_PATH)/ats/transports/diag/linux/audtp/inc/ \
+    $(LOCAL_PATH)/ats/transports/diag/linux/inc/ \
     $(LOCAL_PATH)/ats/adie/common/inc \
     $(LOCAL_PATH)/ats/adie/common/api \
     $(LOCAL_PATH)/ats/api \
@@ -122,8 +123,6 @@ LOCAL_SRC_FILES := \
     ats/transports/tcpip_server/src/tcpip_rtm_server.cpp \
     ats/transports/tcpip_server/src/tcpip_socket_util.cpp
 
-LOCAL_C_INCLUDES += $(TARGET_OUT_HEADERS)/diag/include
-
 LOCAL_MODULE := libats
 LOCAL_MODULE_OWNER := qti
 LOCAL_MODULE_TAGS := optional
@@ -132,14 +131,12 @@ LOCAL_PROPRIETARY_MODULE := true
 LOCAL_HEADER_LIBRARIES := \
     libcutils_headers \
     libutils_headers \
-    libdiag_headers \
     vendor_common_inc
 
 LOCAL_SHARED_LIBRARIES := \
     liblx-osal\
     libutils\
     libcutils \
-    libdiag \
     libar-gsl\
     libar-acdb
 
