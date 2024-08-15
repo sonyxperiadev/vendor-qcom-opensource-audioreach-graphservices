@@ -76,16 +76,7 @@ ifeq ($(TARGET_AUDIO_DYNAMIC_PD_ENABLED), true)
 endif
 
 ifeq ($(TARGET_PD_SERVICE_ENABLED), true)
-    LOCAL_SHARED_LIBRARIES += libpdmapper
-    LOCAL_SHARED_LIBRARIES += libpdnotifier
-    LOCAL_HEADER_LIBRARIES += libpdmapper_headers
-    LOCAL_HEADER_LIBRARIES += libpdnotifier_headers
-    LOCAL_HEADER_LIBRARIES += libqmi_legacy_headers
-    LOCAL_HEADER_LIBRARIES += libqmi_common_headers
-    LOCAL_C_INCLUDES += $(TARGET_OUT_HEADERS)
-    LOCAL_C_INCLUDES += $(TARGET_OUT_HEADERS)/libpdnotifier/inc
-    LOCAL_C_INCLUDES += $(TARGET_OUT_HEADERS)/qmi-framework/inc
-    LOCAL_C_INCLUDES += $(TARGET_OUT_HEADERS)/qmi/inc
+    LOCAL_C_INCLUDES += $(LOCAL_PATH)/api/private
     LOCAL_CFLAGS += -DAR_OSAL_USE_PD_NOTIFIER
 endif
 
