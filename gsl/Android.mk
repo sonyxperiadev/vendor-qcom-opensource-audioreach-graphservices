@@ -1,4 +1,17 @@
 LOCAL_PATH := $(call my-dir)
+
+include $(CLEAR_VARS)
+
+LOCAL_MODULE := libgsl_headers
+LOCAL_PROPRIETARY_MODULE := true
+
+LOCAL_EXPORT_C_INCLUDE_DIRS := \
+    $(LOCAL_PATH)/api \
+    $(LOCAL_PATH)/rtc_api \
+    $(LOCAL_PATH)/hw_rsc_api
+
+include $(BUILD_HEADER_LIBRARY)
+
 include $(CLEAR_VARS)
 
 LOCAL_MODULE := libar-gsl
