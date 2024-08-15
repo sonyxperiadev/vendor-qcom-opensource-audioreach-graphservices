@@ -36,6 +36,76 @@
 
 #include "ats_common.h"
 
+/*------------------------------------------
+* Diag Dynamic loading
+*------------------------------------------*/
+
+#include <dlfcn.h>
+#define DEBUG_LIB "libdiag.so"
+void *debugLibHandle = NULL;
+
+/**
+* \brief
+* Dynamically load libdiag.so
+*
+* \return 0 on success, non-zero on failure
+*/
+
+int32_t load_diag_lib()
+{
+    int32_t status = AR_EOK;
+    ATS_DBG("Enter.");
+    if(!debugLibHandle) {
+        debugLibHandle = dlopen(DEBUG_LIB, RTLD_NOW);
+        if (debugLibHandle == NULL) {
+            const char *err_str = dlerror();
+            ATS_ERR("DLOPEN failed for %s, %s",
+                DEBUG_LIB, err_str ? err_str : "unknown");
+            status = AR_EFAILED;
+            return status;
+        }
+    }
+
+    /* Loading the diag function symbols */
+    diagpkt_tbl_reg = dlsym(debugLibHandle, "diagpkt_tbl_reg");
+    if (!diagpkt_tbl_reg) {
+        ATS_ERR("dlsym error %s for diagpkt_tbl_reg", dlerror());
+        goto error;
+    }
+
+    diagpkt_subsys_alloc = dlsym(debugLibHandle, "diagpkt_subsys_alloc");
+    if (!diagpkt_subsys_alloc) {
+        ATS_ERR("dlsym error %s for diagpkt_subsys_alloc", dlerror());
+        goto error;
+    }
+
+    diagpkt_commit = dlsym(debugLibHandle, "diagpkt_commit");
+    if (!diagpkt_commit) {
+        ATS_ERR("dlsym error %s for diagpkt_commit", dlerror());
+        goto error;
+    }
+
+    diagpkt_subsys_get_cmd_code = dlsym(debugLibHandle, "diagpkt_subsys_get_cmd_code");
+    if (!diagpkt_subsys_get_cmd_code) {
+        ATS_ERR("dlsym error %s for diagpkt_subsys_get_cmd_code", dlerror());
+        goto error;
+    }
+
+    diagpkt_err_rsp = dlsym(debugLibHandle, "diagpkt_err_rsp");
+    if (!diagpkt_err_rsp) {
+        ATS_ERR("dlsym error %s for diagpkt_err_rsp", dlerror());
+        goto error;
+    }
+
+    return status;
+
+error:
+    status = AR_EFAILED;
+    dlclose(debugLibHandle);
+    debugLibHandle = NULL;
+    return status;
+}
+
 //Defing diag functions for compilation on ottp
 #if defined(ATS_OTTP) || defined(_DEVICE_SIM) || defined(ATS_USES_DUMMY_DIAG)
 void diagpkt_commit(void *ptr) { __UNREFERENCED_PARAM(ptr); }
@@ -91,6 +161,14 @@ int32_t actp_diag_init(
 {
     if (Diag_LSM_Init(NULL))
     {
+        int32_t status = AR_EOK;
+
+        status = load_diag_lib();
+        if (AR_FAILED(status)) {
+            ATS_ERR("Error[%d]: Failed to load diag lib", status);
+            return status;
+        }
+
         /**Register command range and diag subsystem dispatcher*/
         DIAGPKT_DISPATCH_TABLE_REGISTER(DIAG_SUBSYS_AUDIO_SETTINGS,
             actp_diag_table);

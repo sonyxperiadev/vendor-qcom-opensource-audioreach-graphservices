@@ -56,7 +56,7 @@ uint16_t proc_id;
 const diagpkt_user_table_entry_type *user_table;
 } diagpkt_user_table_type;
 
-void diagpkt_tbl_reg (const diagpkt_user_table_type * tbl_ptr);
+void (*diagpkt_tbl_reg) (const diagpkt_user_table_type * tbl_ptr);
 
 /* Single processor or modem proc*/
 #define DIAGPKT_DISPATCH_TABLE_REGISTER(xx_subsysid, xx_entry) \
@@ -73,14 +73,14 @@ do { \
 * Functions
 *-------------------------------------------------------------------------*/
 
-void *diagpkt_subsys_alloc (diagpkt_subsys_id_type id,
+void *(*diagpkt_subsys_alloc) (diagpkt_subsys_id_type id,
 diagpkt_subsys_cmd_code_type code, unsigned int length);
 
-void diagpkt_commit (void *ptr);
+void (*diagpkt_commit) (void *ptr);
 
-diagpkt_subsys_cmd_code_type diagpkt_subsys_get_cmd_code (void *ptr);
+diagpkt_subsys_cmd_code_type (*diagpkt_subsys_get_cmd_code) (void *ptr);
 
-void *diagpkt_err_rsp (diagpkt_cmd_code_type code,
+void *(*diagpkt_err_rsp) (diagpkt_cmd_code_type code,
 void *req_ptr, uint16_t req_len);
 
 

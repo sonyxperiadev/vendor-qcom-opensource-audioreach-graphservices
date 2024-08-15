@@ -28,13 +28,11 @@ LOCAL_CFLAGS := $(osal-def)
 LOCAL_HEADER_LIBRARIES += audio_kernel_headers
 LOCAL_HEADER_LIBRARIES += libarosal_headers
 LOCAL_HEADER_LIBRARIES += qti_audio_kernel_uapi
-LOCAL_HEADER_LIBRARIES += libdiag_headers
 LOCAL_EXPORT_HEADER_LIBRARY_HEADERS := libarosal_headers
 
 include $(LIBION_HEADER_PATH_WRAPPER)
 LOCAL_C_INCLUDES += $(LIBION_HEADER_PATHS)
 LOCAL_C_INCLUDES += $(TARGET_OUT_INTERMEDIATES)/vendor/qcom/opensource/audio-kernel/include
-LOCAL_C_INCLUDES += $(TARGET_OUT_HEADERS)/diag/include
 
 ifeq ($(TARGET_COMPILE_WITH_MSM_KERNEL), true)
 LOCAL_C_INCLUDES += $(TARGET_OUT_INTERMEDIATES)/KERNEL_OBJ/usr/include
@@ -62,8 +60,7 @@ else
 LOCAL_SRC_FILES += src/linux/qcom/ar_osal_shmem_db.c
 endif
 
-LOCAL_SHARED_LIBRARIES := liblog \
-                          libdiag
+LOCAL_SHARED_LIBRARIES := liblog
 
 LOCAL_MODULE := liblx-osal
 LOCAL_MODULE_OWNER := qti
