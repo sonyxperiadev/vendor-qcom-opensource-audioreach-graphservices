@@ -31,6 +31,8 @@
 #define  SHMEM_4K_ALIGNMENT       0x1000
 #define AR_MEM_DRIVER_PATH "/dev/msm_audio_mem"
 #define AR_MEM_DRIVER_PATH_CMA "/dev/msm_audio_mem_cma"
+#define AR_MEM_DRIVER_PATH_LEGACY "/dev/msm_audio_ion"
+#define AR_MEM_DRIVER_PATH_CMA_LEGACY "/dev/msm_audio_ion_cma"
 #define DMABUF_SYS_HEAP_PATH "/dev/dma_heap/system"
 #define DMABUF_SYS_HEAP_PATH_UNCACHED "/dev/dma_heap/qcom,system-uncached"
 #define DMABUF_SYS_HEAP_PATH_CMA "/dev/dma_heap/qcom,audio-ml"
@@ -131,12 +133,27 @@ int32_t ar_shmem_init(void)
 
     pdata->armem_fd = open(AR_MEM_DRIVER_PATH, O_RDWR);
     if (pdata->armem_fd < 0) {
-      status = AR_ENOTEXIST;
-      AR_LOG_ERR(AR_OSAL_SHMEM_LOG_TAG,"%s armem fd open failed %s status %d\n", __func__, AR_MEM_DRIVER_PATH, status);
-      close(pdata->dmabuf_fd);
-      goto end;
+      /*
+       * It is possible that the kernel driver uses the new DMA-BUF API but the
+       * old device name in the driver. Let's try again with the legacy name.
+       */
+      AR_LOG_ERR(AR_OSAL_SHMEM_LOG_TAG,"%s armem fd open failed %s status %d. Trying legacy path...\n",
+        __func__, AR_MEM_DRIVER_PATH, status);
+      pdata->armem_fd = open(AR_MEM_DRIVER_PATH_LEGACY, O_RDWR);
+      if (pdata->armem_fd < 0) {
+        status = AR_ENOTEXIST;
+        AR_LOG_ERR(AR_OSAL_SHMEM_LOG_TAG,"%s armem fd open failed %s status %d\n",
+          __func__, AR_MEM_DRIVER_PATH_LEGACY, status);
+        close(pdata->dmabuf_fd);
+        goto end;
+      } else {
+        AR_LOG_INFO(AR_OSAL_SHMEM_LOG_TAG,"%s armem fd open success %s\n",
+          __func__, AR_MEM_DRIVER_PATH_LEGACY);
+      }
+    } else {
+      AR_LOG_INFO(AR_OSAL_SHMEM_LOG_TAG,"%s armem fd open success %s\n",
+        __func__, AR_MEM_DRIVER_PATH);
     }
-    AR_LOG_INFO(AR_OSAL_SHMEM_LOG_TAG,"%s armem fd open success %s\n", __func__, AR_MEM_DRIVER_PATH);
 
 #ifdef AR_OSAL_USE_CUTILS
     pdata->dmabuf_cma_mem_enabled =
@@ -156,15 +173,23 @@ int32_t ar_shmem_init(void)
 
         pdata->armem_fd_cma = open(AR_MEM_DRIVER_PATH_CMA, O_RDWR);
         if (pdata->armem_fd_cma <= 0) {
-          status = AR_ENOTEXIST;
-          AR_LOG_ERR("%s armem fd cma open failed %s status %d\n",
+          /*
+           * It is possible that the kernel driver uses the new DMA-BUF API but the
+           * old device name in the driver. Let's try again with the legacy name.
+           */
+          AR_LOG_ERR("%s armem fd cma open failed %s status %d. Trying legacy path...\n",
             __func__, AR_MEM_DRIVER_PATH_CMA, status);
-          close(pdata->armem_fd);
-          close(pdata->dmabuf_fd);
-          close(pdata->dmabuf_fd_cma);
-          goto end;
+          pdata->armem_fd_cma = open(AR_MEM_DRIVER_PATH_CMA_LEGACY, O_RDWR);
+          if (pdata->armem_fd_cma <= 0) {
+            status = AR_ENOTEXIST;
+            AR_LOG_ERR("%s armem fd cma open failed %s status %d\n",
+              __func__, AR_MEM_DRIVER_PATH_CMA_LEGACY, status);
+            close(pdata->armem_fd);
+            close(pdata->dmabuf_fd);
+            close(pdata->dmabuf_fd_cma);
+            goto end;
+          }
         }
-
     }
 
  end:
