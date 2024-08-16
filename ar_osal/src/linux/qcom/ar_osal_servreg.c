@@ -296,7 +296,7 @@ int32_t ar_osal_servreg_init(void)
     status = load_pdmapper_lib();
     if (AR_FAILED(status)) {
         AR_LOG_ERR(AR_OSAL_SERVREG_TAG, "Error[%d]: Failed to load pd_mapper lib", status);
-        return status;
+        goto end;
     }
 
     pd_mapper_handle = servreg_alloc_DLHandle();
@@ -498,7 +498,7 @@ ar_osal_servreg_t ar_osal_servreg_register(_In_ ar_osal_client_type  client_type
     status = load_pdnotifier_lib();
     if (AR_FAILED(status)) {
         AR_LOG_ERR(AR_OSAL_SERVREG_TAG, "Error[%d]: Failed to load pd_notifier lib", status);
-        return status;
+        goto end;
     }
 
     if (NULL == domain || NULL == service || NULL == cb_func)
