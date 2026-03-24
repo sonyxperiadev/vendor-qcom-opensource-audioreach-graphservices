@@ -168,12 +168,6 @@ int32_t gsl_global_persist_cal_pool_remove(struct gsl_glbl_persist_cal *gpc)
 		--gpc->ref_cnt;
 
 	if (gpc->ref_cnt == 0) {
-		rc = gsl_shmem_free(&gpc->cal_data);
-		if (rc) {
-			GSL_ERR("gsl_shmem_free failed %d", rc);
-			goto exit;
-		}
-
 		rc = ar_list_delete(&gpc_pool.cal_list, &gpc->node);
 		if (rc) {
 			GSL_ERR("ar_list_delete failed %d", rc);
