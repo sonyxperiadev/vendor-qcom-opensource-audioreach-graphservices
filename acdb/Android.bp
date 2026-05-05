@@ -1,0 +1,8 @@
+cc_library_headers {
+    name: "libacdb_headers",
+    export_include_dirs: [
+        "api",
+        "ats/api",
+    ],
+    vendor: true,
+}
